@@ -14,16 +14,59 @@ anomaly detection in a single unified pipeline.
 Kafka · PySpark · LSTM · Isolation Forest · Flask · Chart.js
 
 ## Project Structure
-- `iot/` — sensor simulator and attack injector
-- `models/` — LSTM traffic prediction and Isolation Forest anomaly detection
-- `pipeline/` — Spark stream processor, Flask API, and dashboard
-- `data/` — sample datasets for testing
+```
+backend/
+├── app.py                  # Flask entry-point + Kafka listener
+├── requirements.txt
+├── routes/
+│   ├── __init__.py
+│   ├── traffic.py          # GET /api/traffic/live, /api/traffic/prediction
+│   ├── alerts.py           # GET /api/alerts
+│   └── simulate.py         # POST /api/simulate/attack
+├── models/
+│   ├── __init__.py
+│   ├── inference.py         # load_models, predict_congestion, detect_attack
+│   ├── lstm/
+│   │   ├── model.py         # TrafficLSTM class
+│   │   ├── predict.py       # standalone prediction helper
+│   │   └── train.py         # LSTM training script
+│   └── isolation_forest/
+│       ├── train.py         # Isolation Forest training script
+│       └── detect.py        # standalone detection helper
+├── saved_models/
+│   ├── lstm_weights.pt
+│   ├── iso_forest.pkl
+│   └── scaler.pkl
+├── pipeline/
+│   ├── __init__.py
+│   └── spark_consumer.py   # PySpark Structured Streaming
+├── iot/
+│   ├── __init__.py
+│   ├── simulator.py         # IoT sensor simulator
+│   ├── attack_injector.py   # attack traffic generator
+│   └── config.py            # Kafka, sensor, and traffic config
+└── data/
+    ├── generate_dataset.py
+    ├── raw/
+    └── sample/
+```
 
 ## Setup
 ```bash
-docker-compose up -d        # start Kafka
+docker-compose up -d          # start Kafka + Zookeeper
+cd backend
 pip install -r requirements.txt
-bash start.sh               # launches everything
+python app.py                 # launches Flask + Kafka listener
+```
+
+## Running individual components
+```bash
+# All commands run from the backend/ directory
+python -m iot.simulator              # start IoT sensor simulator
+python -m iot.attack_injector        # start attack injector
+python -m models.lstm.train          # retrain LSTM
+python -m models.isolation_forest.train  # retrain Isolation Forest
+spark-submit pipeline/spark_consumer.py  # start Spark pipeline
 ```
 
 ## Team of 3

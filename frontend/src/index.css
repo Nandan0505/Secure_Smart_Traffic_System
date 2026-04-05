@@ -1,0 +1,125 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/inter";
+@import "https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-sans: 'Inter Variable', sans-serif;
+    --font-heading: 'Manrope', sans-serif;
+
+    /* Theme Colors (Obsidian Command) */
+    --color-background: #111319;
+    --color-foreground: #E2E2EB;
+    
+    --color-card: #1E1F26;
+    --color-card-foreground: #E2E2EB;
+    
+    --color-popover: #1E1F26;
+    --color-popover-foreground: #E2E2EB;
+    
+    --color-primary: #A1C9FF;
+    --color-primary-foreground: #00325A;
+    
+    --color-secondary: #FFB3AE; /* Security Alerts */
+    --color-secondary-foreground: #68000C;
+    
+    --color-muted: #191B22;
+    --color-muted-foreground: #C0C7D3;
+    
+    --color-accent: #33343B;
+    --color-accent-foreground: #E2E2EB;
+    
+    --color-destructive: #FFB4AB;
+    --color-destructive-foreground: #690005;
+    
+    --color-border: rgba(226, 226, 235, 0.1);
+    --color-input: rgba(226, 226, 235, 0.15);
+    --color-ring: #A1C9FF;
+
+    /* Semantic Tiers from Design MD */
+    --color-surface-low: #191B22;
+    --color-surface-container: #1E1F26;
+    --color-surface-highest: #33343B;
+    --color-tertiary: #FFB95D; /* Warnings */
+    --color-tertiary-foreground: #462A00;
+
+    --radius-sm: 0.25rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --radius-2xl: 1.5rem;
+
+    /* Glassmorphism */
+    --glass-background: rgba(30, 31, 38, 0.7);
+    --glass-border: rgba(226, 226, 235, 0.1);
+}
+
+:root {
+    --background: #111319;
+    --foreground: #E2E2EB;
+    --card: #1E1F26;
+    --card-foreground: #E2E2EB;
+    --popover: #1E1F26;
+    --popover-foreground: #E2E2EB;
+    --primary: #A1C9FF;
+    --primary-foreground: #00325A;
+    --secondary: #FFB3AE;
+    --secondary-foreground: #68000C;
+    --muted: #191B22;
+    --muted-foreground: #C0C7D3;
+    --accent: #33343B;
+    --accent-foreground: #E2E2EB;
+    --destructive: #FFB4AB;
+    --destructive-foreground: #690005;
+    --border: rgba(226, 226, 235, 0.1);
+    --input: rgba(226, 226, 235, 0.15);
+    --ring: #A1C9FF;
+    --radius: 0.75rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground;
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(161, 201, 255, 0.05) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(255, 179, 174, 0.03) 0px, transparent 50%);
+    background-attachment: fixed;
+    }
+  html {
+    @apply font-sans;
+    }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight;
+    }
+}
+
+@layer utilities {
+    .glass {
+        @apply bg-surface-container/70 backdrop-blur-xl border border-white/5;
+    }
+    .ghost-border {
+        @apply border border-white/10;
+    }
+    .pulse-alert {
+        background: linear-gradient(135deg, rgba(255, 179, 174, 0.15), rgba(148, 14, 26, 0.15));
+        @apply animate-pulse;
+    }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground;
+    }
+  html {
+    @apply font-sans;
+    }
+}
