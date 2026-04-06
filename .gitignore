@@ -1,10 +1,73 @@
-#data/raw/
-#output/
-#models/lstm/weights/
+# ── Python ─────────────────────────────────────────────────
 __pycache__/
-*.pyc
-.env
-venv/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+*.egg
 *.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+
+# ── Virtual environment ────────────────────────────────────
+backend/venv/
+venv/
+env/
+ENV/
+.venv/
+
+# ── Environment variables ──────────────────────────────────
+.env
+.env.local
+.env.production
+*.env
+
+# ── Model files — too large for Git ───────────────────────
+backend/saved_models/lstm/*.pth
+backend/saved_models/lstm/*.pt
+backend/saved_models/lstm/*.pkl
+backend/saved_models/isolation_forest/*.pkl
+
+# ── Runtime data ───────────────────────────────────────────
+backend/data/trigger_attack.txt
+backend/data/raw/
+backend/data/*.db
+backend/logs/
+
+# ── Spark checkpoints ──────────────────────────────────────
+backend/logs/
+checkpoint/
+derby.log
+metastore_db/
+
+# ── Jupyter notebooks ──────────────────────────────────────
+.ipynb_checkpoints/
+notebooks/.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+
+# ── Frontend ───────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+
+# ── IDE ────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
 .DS_Store
 Thumbs.db
+
+# ── OS ─────────────────────────────────────────────────────
+.DS_Store
+Desktop.ini

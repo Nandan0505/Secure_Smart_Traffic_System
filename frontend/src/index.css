@@ -1,8 +1,8 @@
+@import "https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap";
+@import "@fontsource-variable/inter";
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/inter";
-@import "https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap";
 
 @custom-variant dark (&:is(.dark *));
 

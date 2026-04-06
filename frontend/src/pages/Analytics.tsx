@@ -1,245 +1,299 @@
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 import { motion } from 'framer-motion';
-import { 
-  TrendingUp, 
-  Calendar, 
-  Download, 
-  Filter,
-  PieChart,
+import {
+  TrendingUp,
+  Calendar,
+  Download,
   Target,
-  Zap,
-  MousePointer2
+  MousePointer2,
+  FileSearch,
+  Activity,
+  HardDrive,
+  ShieldCheck
 } from 'lucide-react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  Cell,
+import {
+  BarChart,
+  Bar,
   LineChart,
-  Line
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Cell
 } from 'recharts';
-import { Card, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-
-const barData = [
-  { name: 'Node A', value: 400 },
-  { name: 'Node B', value: 300 },
-  { name: 'Node C', value: 200 },
-  { name: 'Node D', value: 278 },
-  { name: 'Node E', value: 189 },
-  { name: 'Node F', value: 239 },
-];
-
-const lineData = [
-  { name: 'Mon', active: 4000, passive: 2400 },
-  { name: 'Tue', active: 3000, passive: 1398 },
-  { name: 'Wed', active: 2000, passive: 9800 },
-  { name: 'Thu', active: 2780, passive: 3908 },
-  { name: 'Fri', active: 1890, passive: 4800 },
-  { name: 'Sat', active: 2390, passive: 3800 },
-  { name: 'Sun', active: 3490, passive: 4300 },
-];
-
-const COLORS = ['#A1C9FF', '#378ADD', '#A1C9FF80', '#378ADD80', '#A1C9FF40', '#378ADD40'];
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export function Analytics() {
+  const [stats, setStats] = useState<any>(null);
+  const [sensors, setSensors] = useState<any[]>([]);
+  const [summary, setSummary] = useState<any>(null);
+  const [history, setHistory] = useState<any[]>([]);
+  const [health, setHealth] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  const API_BASE = 'http://localhost:5000';
+
+  useEffect(() => {
+    const fetchAnalyticsData = async () => {
+      try {
+        const [statsRes, sensorsRes, summaryRes, healthRes, historyRes] = await Promise.all([
+          axios.get('/api/traffic/stats'),
+          axios.get('/api/traffic/sensors'),
+          fetch(`${API_BASE}/api/analytics/summary`).then(r => r.json()),
+          fetch(`${API_BASE}/api/analytics/system-health`).then(r => r.json()),
+          fetch(`${API_BASE}/api/analytics/history?window=1h`).then(r => r.json())
+        ]);
+
+        setStats(statsRes.data);
+        setSensors(sensorsRes.data);
+        setSummary(summaryRes);
+        setHealth(healthRes);
+
+        // Transform history into Recharts format
+        if (historyRes.timestamps) {
+          const chartData = historyRes.timestamps.map((t: string, i: number) => ({
+            time: t,
+            actual: historyRes.actual[i],
+            predicted: historyRes.predicted[i],
+          }));
+          setHistory(chartData);
+        }
+      } catch (err) {
+        console.error('Failed to fetch analytics data', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAnalyticsData();
+  }, []);
+
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className="p-6 space-y-6"
     >
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-heading font-black tracking-tighter">DATA ANALYTICS</h2>
+          <h2 className="text-3xl font-heading font-black tracking-tighter text-white uppercase italic">Advanced Data Analytics</h2>
           <p className="text-muted-foreground font-medium">Historical performance insight and long-term urban trends.</p>
         </div>
         <div className="flex gap-2">
-            <Button variant="outline" className="rounded-full border-white/5 bg-white/5 h-9 font-bold px-6">
-                <Calendar className="mr-2 h-4 w-4" />
-                Select Range
-            </Button>
-            <Button className="rounded-full bg-primary text-primary-foreground h-9 font-bold px-6">
-                <Download className="mr-2 h-4 w-4" />
-                Generate Report
-            </Button>
+          <Button variant="outline" className="rounded-full border-white/5 bg-white/5 h-9 font-bold px-6 uppercase tracking-widest text-[10px]">
+            <Calendar className="mr-2 h-4 w-4" />
+            Select Range
+          </Button>
+          <Button className="rounded-full bg-primary text-primary-foreground h-9 font-bold px-6 uppercase tracking-widest text-[10px] shadow-lg shadow-primary/20">
+            <Download className="mr-2 h-4 w-4" />
+            Generate Report
+          </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Volume', value: '1,424,902', trend: '+4.2%', desc: 'Cars / Sensors' },
-          { label: 'Avg Speed', value: '38.4 mph', trend: '-1.1%', desc: 'Across Network' },
-          { label: 'Peak Load', value: '2.4 GB/s', trend: '+15.2%', desc: 'Telemetry Data' },
-          { label: 'Target KPI', value: '98%', trend: 'Target: 95%', desc: 'Optimization Goal' },
+          { label: 'Total Volume', value: stats?.total_volume || '0', trend: '+4.2%', desc: 'Session Data' },
+          { label: 'Avg Frequency', value: `${stats?.avg_flow?.toFixed(1) || '0'}Hz`, trend: 'Nominal', desc: 'Sync Rate' },
+          { label: 'Model Accuracy', value: `${summary?.model_accuracy || '--'}%`, trend: summary?.accuracy_trend || 'Projected', desc: 'Forecast Precision' },
+          { label: 'Busiest Window', value: summary?.busiest_window || 'N/A', trend: 'Actual', desc: 'Resource Allocation' },
         ].map((metric, idx) => (
-          <Card key={idx} className="bg-surface-container border-white/5 p-4 flex flex-col justify-between hover:border-primary/20 transition-all">
-             <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">{metric.label}</p>
-                <h4 className="text-2xl font-black font-heading tracking-tighter">{metric.value}</h4>
-             </div>
-             <div className="flex items-center justify-between mt-4">
-                <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
-                   metric.trend.includes('+') ? 'bg-emerald-500/10 text-emerald-500' : 'bg-secondary/10 text-secondary'
+          <Card key={idx} className="bg-surface-container border-white/5 p-4 flex flex-col justify-between hover:border-primary/20 transition-all cursor-default group">
+            <div>
+              <p className="text-[10px] font-black text-muted-foreground uppercase mb-1 tracking-widest">{metric.label}</p>
+              <h4 className="text-2xl font-black font-heading tracking-tighter text-white uppercase italic group-hover:text-primary transition-colors">{metric.value}</h4>
+            </div>
+            <div className="flex items-center justify-between mt-4">
+              <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${metric.trend.includes('+') || metric.trend === 'Stable' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-primary/20 text-primary'
                 }`}>
-                   {metric.trend}
-                </span>
-                <span className="text-[10px] text-muted-foreground uppercase font-medium">{metric.desc}</span>
-             </div>
+                {metric.trend}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase font-medium">{metric.desc}</span>
+            </div>
           </Card>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Node Distribution */}
-        <Card className="bg-surface-container border-white/5 p-6">
-           <div className="flex items-center justify-between mb-8">
+        {/* LSTM Prediction vs Actual Chart */}
+        <Card className="bg-surface-container border-white/5 p-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
               <CardTitle className="font-heading font-black tracking-tighter text-lg uppercase italic flex items-center gap-2 text-primary">
-                 <Target className="h-5 w-5" />
-                 Node Distribution Efficiency
+                <Target className="h-5 w-5" />
+                LSTM PREDICTION VS ACTUAL
               </CardTitle>
-              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white/5">
-                 <Filter className="h-4 w-4" />
-              </Button>
-           </div>
-           <ResponsiveContainer width="100%" height={300}>
-             <BarChart data={barData}>
-               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-               <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#C0C7D3', fontSize: 10 }}
-               />
-               <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#C0C7D3', fontSize: 10 }}
-               />
-               <Tooltip 
-                  cursor={{ fill: 'rgba(161,201,255,0.05)' }}
-                  contentStyle={{ backgroundColor: '#1E1F26', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                  itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
-               />
-               <Bar 
-                  dataKey="value" 
-                  radius={[8, 8, 0, 0]} 
-                  animationDuration={1500}
-               >
-                 {barData.map((_entry, index) => (
-                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                 ))}
-               </Bar>
-             </BarChart>
-           </ResponsiveContainer>
+              <CardDescription>Real-time vehicle count forecasting vs ground-truth sensor data.</CardDescription>
+            </div>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={history}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#8b8fa8', fontSize: 10 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#8b8fa8', fontSize: 10 }} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#1a1d27', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                  itemStyle={{ fontSize: '10px', fontWeight: 'bold' }}
+                />
+                <Legend iconType="circle" />
+                <Line type="monotone" dataKey="actual" stroke="#3fb950" strokeWidth={2} dot={false} name="Actual" />
+                <Line type="monotone" dataKey="predicted" stroke="#f0883e" strokeWidth={2} dot={false} strokeDasharray="5 5" name="Predicted" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </Card>
 
-        {/* Temporal Trends */}
-        <Card className="bg-surface-container border-white/5 p-6">
-           <div className="flex items-center justify-between mb-8">
+        {/* Top Node Efficiency */}
+        <Card className="bg-surface-container border-white/5 p-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
               <CardTitle className="font-heading font-black tracking-tighter text-lg uppercase italic flex items-center gap-2 text-primary">
-                 <TrendingUp className="h-5 w-5" />
-                 Temporal Utilization Trends
+                <TrendingUp className="h-5 w-5" />
+                Node Throughput Ranking
               </CardTitle>
-              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white/5">
-                 <MousePointer2 className="h-4 w-4" />
-              </Button>
-           </div>
-           <ResponsiveContainer width="100%" height={300}>
-             <LineChart data={lineData}>
-               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-               <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#C0C7D3', fontSize: 10 }}
-               />
-               <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#C0C7D3', fontSize: 10 }}
-               />
-               <Tooltip 
-                  contentStyle={{ backgroundColor: '#1E1F26', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                  itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
-               />
-               <Line 
-                  type="monotone" 
-                  dataKey="active" 
-                  stroke="#A1C9FF" 
-                  strokeWidth={4}
-                  dot={{ r: 4, stroke: '#111319', strokeWidth: 2, fill: '#A1C9FF' }}
-                  activeDot={{ r: 6, stroke: '#A1C9FF', strokeWidth: 2, fill: '#111319' }}
-               />
-               <Line 
-                  type="monotone" 
-                  dataKey="passive" 
-                  stroke="rgba(161,201,255,0.3)" 
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  dot={false}
-               />
-             </LineChart>
-           </ResponsiveContainer>
-           <div className="flex justify-center gap-6 mt-4">
-              <div className="flex items-center gap-2">
-                 <div className="w-3 h-1 rounded-full bg-primary" />
-                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Active Load</span>
-              </div>
-              <div className="flex items-center gap-2">
-                 <div className="w-3 h-1 border-t-2 border-dashed border-primary/40" />
-                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Passive Baseline</span>
-              </div>
-           </div>
+              <CardDescription>Top performing intersections by total volume capacity.</CardDescription>
+            </div>
+            <MousePointer2 className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={sensors.slice(0, 6).map(s => ({ name: s.sensor_id, value: s.vehicle_count }))}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#8b8fa8', fontSize: 10 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#8b8fa8', fontSize: 10 }} />
+                <Tooltip
+                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                  contentStyle={{ backgroundColor: '#1a1d27', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                  itemStyle={{ fontSize: '10px', fontWeight: 'bold' }}
+                />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]} animationDuration={1000}>
+                  {sensors.slice(0, 6).map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={index === 0 ? '#378ADD' : 'rgba(55, 138, 221, 0.3)'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
-         {[
-            { icon: PieChart, label: 'Optimization Delta', value: '42%', desc: 'Improvement vs legacy baseline.' },
-            { icon: Zap, label: 'Processing Speed', value: '0.4ms', desc: 'Average end-to-end telemetry sync.' },
-            { icon: FileSearch, label: 'Data Integrity', value: '99.9%', desc: 'Verified through hash orchestration.' },
-         ].map((tool, idx) => (
-            <Card key={idx} className="bg-surface-container border-white/5 p-8 flex flex-col items-center text-center group hover:border-primary/20 transition-all cursor-default">
-               <div className="h-16 w-16 rounded-3xl bg-surface-lowest flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <tool.icon className="h-8 w-8 text-primary" />
-               </div>
-               <h4 className="text-xl font-heading font-black tracking-tighter uppercase italic">{tool.label}</h4>
-               <p className="text-muted-foreground text-sm font-medium mt-2 max-w-[200px]">{tool.desc}</p>
-               <div className="mt-8 flex items-baseline gap-2">
-                  <span className="text-4xl font-black font-heading tracking-tighter text-gradient bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/40">
-                     {tool.value}
+      {/* Comprehensive Sensor Performance Table */}
+      <Card className="bg-surface-container border-white/5 flex flex-col">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="font-heading font-black tracking-tighter text-lg uppercase italic flex items-center gap-2 text-white">
+              <HardDrive className="h-5 w-5 text-primary" />
+              Node Infrastructure Audit
+            </CardTitle>
+            <CardDescription>Detailed telemetry readout of each mesh sensor unit.</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0 flex-1 overflow-hidden">
+          <ScrollArea className="h-[400px]">
+            <Table>
+              <TableHeader className="bg-surface-lowest/50 sticky top-0 z-10">
+                <TableRow className="border-white/5 hover:bg-transparent">
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest py-3 pl-6">Node ID</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest py-3">Location</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest py-3 text-center">Volume (Cars)</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest py-3 text-center">Load Factor</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest py-3 pr-6 text-right">Integrity</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sensors.map((sensor, idx) => (
+                  <TableRow key={sensor.sensor_id || idx} className="border-white/5 hover:bg-white/5 transition-colors group">
+                    <TableCell className="font-mono text-xs text-primary pl-6 font-bold">{sensor.sensor_id || 'N/A'}</TableCell>
+                    <TableCell className="text-xs uppercase font-medium text-white/80">{sensor.intersection?.replace(/_/g, ' ') || 'Awaiting Node'}</TableCell>
+                    <TableCell className="text-center font-mono text-xs">{sensor.vehicle_count || 0}</TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex flex-col items-center gap-1.5">
+                        <span className="text-[10px] font-black text-white">{((sensor.lane_occupancy || 0) * 100).toFixed(1)}%</span>
+                        <div className="w-20 h-1 bg-white/5 rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(sensor.lane_occupancy || 0) * 100}%` }}
+                            className={`h-full ${(sensor.lane_occupancy || 0) > 0.8 ? 'bg-secondary' : 'bg-primary'}`}
+                          />
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="pr-6 text-right">
+                      <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest">
+                        Operational
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {sensors.length === 0 && !loading && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic uppercase tracking-widest text-[10px]">
+                      No active nodes reporting telemetry
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
+        {/* System Health Panel */}
+        <Card className="bg-surface-container border-white/5 p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="font-heading font-black tracking-tighter text-lg uppercase italic flex items-center gap-2 text-white">
+                <ShieldCheck className="h-5 w-5 text-emerald-500" />
+                Infrastructure Health
+              </CardTitle>
+              <CardDescription>Real-time status of critical backend components.</CardDescription>
+            </div>
+          </div>
+
+          <ScrollArea className="h-[200px] w-full pr-4">
+            <div className="space-y-3">
+              {health?.components.map((c: any) => (
+                <div key={c.name} className="p-3 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between group hover:bg-white/10 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className={`h-2 w-2 rounded-full ${c.status === 'Active' || c.status === 'Connected' || c.status === 'Loaded' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-amber-500 animate-pulse'}`} />
+                    <div>
+                      <p className="text-[10px] font-black uppercase text-white tracking-widest">{c.name}</p>
+                      <p className="text-[9px] text-muted-foreground uppercase font-medium">{c.detail}</p>
+                    </div>
+                  </div>
+                  <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${c.status === 'Active' || c.status === 'Connected' || c.status === 'Loaded' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                    {c.status}
                   </span>
-                  <span className="text-emerald-500 font-black text-xs">OK</span>
-               </div>
-            </Card>
-         ))}
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </Card>
+
+        {/* Additional Tool Card (Inference Precision) */}
+        <Card className="bg-surface-container border-white/5 p-8 flex flex-col items-center justify-center text-center group hover:border-primary/20 transition-all cursor-default">
+          <div className="h-16 w-16 rounded-3xl bg-surface-lowest flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <FileSearch className="h-8 w-8 text-primary" />
+          </div>
+          <h4 className="text-xl font-heading font-black tracking-tighter uppercase italic text-white">Inference Precision</h4>
+          <p className="text-muted-foreground text-sm font-medium mt-2 max-w-[200px]">LSTM baseline accuracy vs distributed node telemetry.</p>
+          <div className="mt-8 flex items-baseline gap-2">
+            <span className="text-4xl font-black font-heading tracking-tighter text-gradient bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/40">
+              {summary?.model_accuracy || '--'}%
+            </span>
+            <span className="text-emerald-500 font-black text-xs uppercase">{summary?.accuracy_trend || 'Stable'}</span>
+          </div>
+        </Card>
       </div>
     </motion.div>
-  );
-}
-
-function FileSearch({ className }: { className?: string }) {
-  return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width="24" 
-      height="24" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      className={className}
-    >
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <path d="M11.5 13.5a2.5 2.5 0 1 0-2.5 2.5" />
-      <path d="M11.5 13.5 13 15" />
-    </svg>
   );
 }
