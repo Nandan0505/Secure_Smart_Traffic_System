@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 import { motion } from 'framer-motion';
 import { 
   Shield, 
@@ -7,7 +9,9 @@ import {
   Lock, 
   Globe, 
   ArrowRight,
-  Play
+  Play,
+  Activity,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -31,6 +35,30 @@ const features = [
 ];
 
 export function LandingPage() {
+  const [health, setHealth] = useState({ status: 'loading', service: '' });
+  const [stats, setStats] = useState({ 
+    total_vehicles: 0, 
+    active_sensors: 0, 
+    total_sensors: 5,
+    total_alerts: 0 
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const healthRes = await axios.get('/api/health');
+        setHealth(healthRes.data);
+
+        const statsRes = await axios.get('/api/traffic/stats');
+        setStats(statsRes.data);
+      } catch (err) {
+        console.error('Failed to fetch initial landing data', err);
+        setHealth({ status: 'offline', service: '' });
+      }
+    };
+    fetchData();
+  }, []);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { 
@@ -62,8 +90,10 @@ export function LandingPage() {
       >
         <motion.div variants={itemVariants} className="space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/20 bg-primary/5 mb-4 group cursor-default">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-primary">System Online: v4.2.0</span>
+            <span className={`w-2 h-2 rounded-full ${health.status === 'ok' ? 'bg-primary' : 'bg-red-500'} animate-pulse`} />
+            <span className={`text-[10px] font-black uppercase tracking-widest ${health.status === 'ok' ? 'text-primary' : 'text-red-500'}`}>
+              System: {health.status === 'ok' ? 'Online' : health.status === 'loading' ? 'Checking...' : 'Offline'}
+            </span>
           </div>
           <h1 className="text-6xl md:text-8xl font-heading font-black tracking-tighter leading-none italic uppercase">
             ORCHESTRATING THE <br />
@@ -74,13 +104,33 @@ export function LandingPage() {
           </p>
         </motion.div>
 
+        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-3xl">
+           <div className="p-6 rounded-2xl bg-surface-container border border-white/5 flex flex-col items-center justify-center space-y-1">
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total Vehicles</span>
+              <span className="text-3xl font-heading font-black tracking-tighter text-white">{stats.total_vehicles.toLocaleString()}</span>
+              <Activity className="h-4 w-4 text-primary opacity-50" />
+           </div>
+           <div className="p-6 rounded-2xl bg-surface-container border border-white/5 flex flex-col items-center justify-center space-y-1">
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Active Sensors</span>
+              <span className="text-3xl font-heading font-black tracking-tighter text-white">{stats.active_sensors}/{stats.total_sensors}</span>
+              <Zap className="h-4 w-4 text-emerald-500 opacity-50" />
+           </div>
+           <div className="p-6 rounded-2xl bg-surface-container border border-white/5 flex flex-col items-center justify-center space-y-1">
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total Alerts</span>
+              <span className="text-3xl font-heading font-black tracking-tighter text-white">{stats.total_alerts}</span>
+              <AlertTriangle className="h-4 w-4 text-secondary opacity-50" />
+           </div>
+        </motion.div>
+
         <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-center gap-4">
           <Button asChild size="lg" className="rounded-full h-14 px-10 bg-primary text-primary-foreground font-black uppercase tracking-widest text-sm hover:scale-105 transition-transform shadow-xl shadow-primary/20">
             <Link to="/dashboard">Initialize Dashboard</Link>
           </Button>
-          <Button variant="ghost" size="lg" className="rounded-full h-14 px-8 border border-white/5 font-black uppercase tracking-widest text-sm hover:bg-white/5">
-            <Play className="mr-2 h-4 w-4 fill-current" />
-            Watch Core Demo
+          <Button asChild variant="ghost" size="lg" className="rounded-full h-14 px-8 border border-white/5 font-black uppercase tracking-widest text-sm hover:bg-white/5">
+            <Link to="/about">
+              <Play className="mr-2 h-4 w-4 fill-current" />
+              Project Overview
+            </Link>
           </Button>
         </motion.div>
 
